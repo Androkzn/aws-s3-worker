@@ -1,5 +1,5 @@
 {
-  "name": "huppy-api",
+  "name": "aws-s3-worker",
   "version": "0.0.0",
   "private": true,
   "scripts": {
