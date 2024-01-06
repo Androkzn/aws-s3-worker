@@ -1,32 +1,44 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 let s3Client = null;
 
 const createS3Client = (env) => {
-	if (!s3ClientInstance) {
-		const region = env.AWS_BUCKET_REGION;
-		const accessKeyId = env.AWS_ACCESS_KEY;
-		const secretAccessKey = env.AWS_SECRET_ACCESS_KEY;
-		s3Client = new S3Client({
-			region: region,
-			credentials: {
-				accessKeyId,
-				secretAccessKey,
-			},
-		});
-	}
-	return s3Client;
+  if (!s3ClientInstance) {
+    const region = env.AWS_BUCKET_REGION;
+    const accessKeyId = env.AWS_ACCESS_KEY;
+    const secretAccessKey = env.AWS_SECRET_ACCESS_KEY;
+    s3Client = new S3Client({
+      region: region,
+      credentials: {
+        accessKeyId,
+        secretAccessKey,
+      },
+    });
+  }
+  return s3Client;
 };
 
+export async function uploadFile(
+  fileBuffer,
+  fileName,
+  mimetype,
+  destination,
+  metadata = {},
+  env,
+) {
+  metadata["Content-Type"] = mimetype;
 
-export function uploadFile(fileBuffer, fileName, mimetype, destination, metadata = {}, env) {
-	metadata['Content-Type'] = mimetype;
+  const s3Client = createS3Client(env);
 
-	const s3Client = createS3Client(env);
-
-	const uploadParams = {
-		Bucket: env.AWS_BUCKET_NAME
+  const uploadParams = {
+    Bucket: env.AWS_BUCKET_NAME,
     Body: fileBuffer,
     Key: `${destination}/${fileName}`,
     ContentType: mimetype,
@@ -42,13 +54,13 @@ export function uploadFile(fileBuffer, fileName, mimetype, destination, metadata
   }
 }
 
-export function deleteFile(fileName, env) {
-	const s3Client = createS3Client(env);
+export async function deleteFile(fileName, env) {
+  const s3Client = createS3Client(env);
 
-	const deleteParams = {
-		Bucket: env.AWS_BUCKET_NAME,
-		Key: fileName,
-	};
+  const deleteParams = {
+    Bucket: env.AWS_BUCKET_NAME,
+    Key: fileName,
+  };
 
   try {
     const result = await s3Client.send(new DeleteObjectCommand(deleteParams));
@@ -61,14 +73,14 @@ export function deleteFile(fileName, env) {
 
 // Function to check if an object exists in the bucket
 async function doesObjectExist(key, env) {
-	const s3Client = createS3Client(env);
+  const s3Client = createS3Client(env);
 
-	const params = {
-		Bucket: env.AWS_BUCKET_NAME,
-		Key: key,
-	};
-  
-  const command = new GetObjectCommand(params)
+  const params = {
+    Bucket: env.AWS_BUCKET_NAME,
+    Key: key,
+  };
+
+  const command = new GetObjectCommand(params);
 
   try {
     // If the headObject request is successful, the object exists
@@ -76,15 +88,15 @@ async function doesObjectExist(key, env) {
     return true;
   } catch (error) {
     // If the headObject request fails, the object does not exist
-    console.error(`doesObjectExist error`, error)
+    console.error(`doesObjectExist error`, error);
     return false;
   }
 }
 
 // Function to get a pre-signed URL for reading an object
 export async function getObjectUrl(key, env) {
-	const s3Client = createS3Client(env);
-  
+  const s3Client = createS3Client(env);
+
   // Check if the object exists before proceeding
   const objectExists = await doesObjectExist(key);
   if (!objectExists) {
@@ -103,14 +115,14 @@ export async function getObjectUrl(key, env) {
 
 // Function to check if an object exists in the bucket
 export async function getObject(key, env) {
-	const s3Client = createS3Client(env);
+  const s3Client = createS3Client(env);
 
-	const params = {
-		Bucket: env.AWS_BUCKET_NAME,
-		Key: key,
-	};
-  
-  const command = new GetObjectCommand(params)
+  const params = {
+    Bucket: env.AWS_BUCKET_NAME,
+    Key: key,
+  };
+
+  const command = new GetObjectCommand(params);
 
   try {
     // If the headObject request is successful, the object exists
